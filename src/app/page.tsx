@@ -1,18 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  Play,
-  Pause,
-  Check,
-  Volume2,
-  VolumeX,
-  Settings as SettingsIcon,
-  History,
-  ArrowLeft,
-  X,
-} from "lucide-react";
-import { BodyPart, WorkoutHistoryItem } from "../types";
+import { Play, Pause, Check, Volume2, VolumeX, History, X } from "lucide-react";
+import { WorkoutHistoryItem } from "../types";
 import { useTimer } from "../hooks/useTimer";
 import { useSettings } from "../hooks/useSettings";
 import { clsx } from "clsx";
@@ -128,16 +118,6 @@ export default function Page() {
       // 日本時間で現在の日時を取得
       const now = new Date();
       const japanTime = new Date(now.getTime() + 9 * 60 * 60 * 1000); // UTC+9
-
-      // デバッグ用ログ
-      console.log("Saving workout session:", {
-        sets: sessionSets,
-        sessionDuration: sessionDuration,
-        totalWorkoutTime: totalWorkoutTime,
-        localDate: now.toLocaleDateString("ja-JP"),
-        japanDate: japanTime.toLocaleDateString("ja-JP"),
-        date: japanTime.toISOString(),
-      });
 
       const historyItem: WorkoutHistoryItem = {
         bodyPart: "chest", // 固定値として設定

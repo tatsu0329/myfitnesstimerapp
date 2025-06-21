@@ -33,8 +33,6 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    // If the ID didn't exist, Supabase returns no error, so we assume success.
-    console.log(`Update request for id ${id} sent successfully.`);
     return NextResponse.json({ message: "Update successful" });
   } catch (error) {
     console.error("Error processing request:", error);

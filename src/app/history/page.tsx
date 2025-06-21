@@ -75,15 +75,6 @@ export default function HistoryPage() {
       .toString()
       .padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
 
-    // デバッグ用ログ
-    console.log("formatTime:", {
-      seconds,
-      hours,
-      minutes,
-      remainingSeconds,
-      formattedTime,
-    });
-
     return formattedTime;
   };
 
@@ -164,7 +155,6 @@ export default function HistoryPage() {
           sessions: stats.sessions.length,
           totalTime: stats.totalTime || 0,
         };
-        console.log("Date stats:", { selectedDate, stats, result });
         return result;
       }
     } else if (viewMode === "month") {
@@ -176,11 +166,6 @@ export default function HistoryPage() {
         sessions: monthStats.sessions,
         totalTime: monthStats.totalTime || 0,
       };
-      console.log("Month stats:", {
-        month: currentMonth.getMonth() + 1,
-        monthStats,
-        result,
-      });
       return result;
     } else {
       // 全体統計
@@ -188,7 +173,6 @@ export default function HistoryPage() {
         sessions: getTotalSessions(),
         totalTime: getTotalTime() || 0,
       };
-      console.log("All stats:", result);
       return result;
     }
 
@@ -197,7 +181,6 @@ export default function HistoryPage() {
       sessions: getTotalSessions(),
       totalTime: getTotalTime() || 0,
     };
-    console.log("Default stats:", result);
     return result;
   };
 
@@ -208,14 +191,8 @@ export default function HistoryPage() {
   const getTotalTime = () => {
     const total = history.reduce((sum, item) => {
       const time = item.totalTime || 0;
-      console.log("History item time:", {
-        id: item.id,
-        totalTime: time,
-        date: item.date,
-      });
       return sum + time;
     }, 0);
-    console.log("Total workout time:", total);
     return total;
   };
 
@@ -399,12 +376,6 @@ export default function HistoryPage() {
               <div className="text-2xl font-light text-stone-800 dark:text-stone-200">
                 {(() => {
                   const formattedTime = formatTime(currentStats.totalTime);
-                  console.log("Displaying total time:", {
-                    rawTime: currentStats.totalTime,
-                    formattedTime,
-                    viewMode,
-                    selectedDate,
-                  });
                   return formattedTime;
                 })()}
               </div>

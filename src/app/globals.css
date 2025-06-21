@@ -1,26 +1,469 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+@layer base {
+  html {
+    font-family: system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-gray-50 dark:bg-gray-900;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-500 hover:bg-primary-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2 px-4 rounded-lg transition-colors;
+  }
+
+  .card {
+    @apply bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700;
+  }
+}
+
+/* カスタムカラーのフォールバック */
+@layer utilities {
+  .bg-primary-500 {
+    background-color: #6366f1 !important;
+  }
+
+  .bg-primary-600 {
+    background-color: #4f46e5 !important;
+  }
+
+  .bg-accent-500 {
+    background-color: #14b8a6 !important;
+  }
+
+  .bg-accent-600 {
+    background-color: #0d9488 !important;
+  }
+
+  .text-primary-500 {
+    color: #6366f1 !important;
+  }
+
+  .text-primary-600 {
+    color: #4f46e5 !important;
+  }
+
+  .text-accent-500 {
+    color: #14b8a6 !important;
+  }
+
+  .text-accent-600 {
+    color: #0d9488 !important;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #f59e0b, #ea580c);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #d97706, #dc2626);
+}
+
+/* Zen breathing animation */
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.5;
+  }
+}
+
+/* Zen pulse animation */
+@keyframes zen-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Zen fade in animation */
+@keyframes zen-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Zen slide in animation */
+@keyframes zen-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Apply animations */
+.zen-fade-in {
+  animation: zen-fade-in 0.6s ease-out;
+}
+
+.zen-slide-in {
+  animation: zen-slide-in 0.4s ease-out;
+}
+
+.zen-pulse {
+  animation: zen-pulse 2s ease-in-out infinite;
+}
+
+/* Custom focus styles */
+.focus-zen:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.3);
+  border-radius: 0.5rem;
+}
+
+/* Glass morphism effect */
+.glass {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Zen gradient text */
+.zen-gradient-text {
+  background: linear-gradient(135deg, #f59e0b, #ea580c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Zen border gradient */
+.zen-border-gradient {
+  border: 1px solid;
+  border-image: linear-gradient(135deg, #f59e0b, #ea580c) 1;
+}
+
+/* Custom button hover effects */
+.btn-zen {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-zen:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(245, 158, 11, 0.2);
+}
+
+/* Zen card hover effect */
+.card-zen {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-zen:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Zen loading spinner */
+.zen-spinner {
+  border: 2px solid rgba(245, 158, 11, 0.2);
+  border-top: 2px solid #f59e0b;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Zen progress bar */
+.zen-progress {
+  background: linear-gradient(90deg, #f59e0b, #ea580c);
+  transition: width 0.3s ease-out;
+}
+
+/* Zen text selection */
+::selection {
+  background: rgba(245, 158, 11, 0.3);
+  color: inherit;
+}
+
+/* Zen selection for dark mode */
+@media (prefers-color-scheme: dark) {
+  ::selection {
+    background: rgba(245, 158, 11, 0.4);
+  }
+}
+
+/* Zen focus ring for accessibility */
+.focus-zen-ring:focus-visible {
+  outline: 2px solid #f59e0b;
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+/* Zen backdrop blur for modals */
+.zen-backdrop {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Zen shadow utilities */
+.zen-shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.zen-shadow {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.zen-shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.zen-shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.zen-shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Zen color palette */
+.zen-amber-50 {
+  background-color: #fffbeb;
+}
+.zen-amber-100 {
+  background-color: #fef3c7;
+}
+.zen-amber-200 {
+  background-color: #fde68a;
+}
+.zen-amber-300 {
+  background-color: #fcd34d;
+}
+.zen-amber-400 {
+  background-color: #fbbf24;
+}
+.zen-amber-500 {
+  background-color: #f59e0b;
+}
+.zen-amber-600 {
+  background-color: #d97706;
+}
+.zen-amber-700 {
+  background-color: #b45309;
+}
+.zen-amber-800 {
+  background-color: #92400e;
+}
+.zen-amber-900 {
+  background-color: #78350f;
+}
+
+/* Zen stone color palette */
+.zen-stone-50 {
+  background-color: #fafaf9;
+}
+.zen-stone-100 {
+  background-color: #f5f5f4;
+}
+.zen-stone-200 {
+  background-color: #e7e5e4;
+}
+.zen-stone-300 {
+  background-color: #d6d3d1;
+}
+.zen-stone-400 {
+  background-color: #a8a29e;
+}
+.zen-stone-500 {
+  background-color: #78716c;
+}
+.zen-stone-600 {
+  background-color: #57534e;
+}
+.zen-stone-700 {
+  background-color: #44403c;
+}
+.zen-stone-800 {
+  background-color: #292524;
+}
+.zen-stone-900 {
+  background-color: #1c1917;
+}
+
+/* Zen typography */
+.zen-text-xs {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+.zen-text-sm {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+.zen-text-base {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+.zen-text-lg {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+.zen-text-xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+.zen-text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+.zen-text-3xl {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+}
+.zen-text-4xl {
+  font-size: 2.25rem;
+  line-height: 2.5rem;
+}
+.zen-text-5xl {
+  font-size: 3rem;
+  line-height: 1;
+}
+.zen-text-6xl {
+  font-size: 3.75rem;
+  line-height: 1;
+}
+
+/* Zen font weights */
+.zen-font-light {
+  font-weight: 300;
+}
+.zen-font-normal {
+  font-weight: 400;
+}
+.zen-font-medium {
+  font-weight: 500;
+}
+.zen-font-semibold {
+  font-weight: 600;
+}
+.zen-font-bold {
+  font-weight: 700;
+}
+
+/* Zen spacing */
+.zen-space-1 {
+  margin: 0.25rem;
+}
+.zen-space-2 {
+  margin: 0.5rem;
+}
+.zen-space-3 {
+  margin: 0.75rem;
+}
+.zen-space-4 {
+  margin: 1rem;
+}
+.zen-space-6 {
+  margin: 1.5rem;
+}
+.zen-space-8 {
+  margin: 2rem;
+}
+.zen-space-12 {
+  margin: 3rem;
+}
+.zen-space-16 {
+  margin: 4rem;
+}
+
+/* Zen border radius */
+.zen-rounded-sm {
+  border-radius: 0.125rem;
+}
+.zen-rounded {
+  border-radius: 0.25rem;
+}
+.zen-rounded-md {
+  border-radius: 0.375rem;
+}
+.zen-rounded-lg {
+  border-radius: 0.5rem;
+}
+.zen-rounded-xl {
+  border-radius: 0.75rem;
+}
+.zen-rounded-2xl {
+  border-radius: 1rem;
+}
+.zen-rounded-3xl {
+  border-radius: 1.5rem;
+}
+.zen-rounded-full {
+  border-radius: 9999px;
 }
