@@ -1,16 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  Play,
-  Pause,
-  Check,
-  Volume2,
-  VolumeX,
-  History,
-  X,
-  Bell,
-} from "lucide-react";
+import { Play, Pause, Check, Volume2, X, Bell } from "lucide-react";
 import { WorkoutHistoryItem } from "../types";
 import { useTimer } from "../hooks/useTimer";
 import { useSettings } from "../hooks/useSettings";
@@ -112,7 +103,6 @@ export default function Page() {
   });
   const [isInRestMode, setIsInRestMode] = useState(false);
   const [isAudioUnlocked, setIsAudioUnlocked] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
 
   useEffect(() => {
@@ -120,12 +110,6 @@ export default function Page() {
   }, [isWorkoutMode, setShowFooter]);
 
   const handleTimerEnd = useCallback(async () => {
-    // Skip sound if we're in the middle of resetting
-    if (isResetting) {
-      console.log("Skipping timer end sound - reset in progress");
-      return;
-    }
-
     console.log("handleTimerEnd called - checking if sound should play");
     if (settings.soundOn) {
       console.log("Sound is enabled, playing notification sound");
@@ -144,7 +128,7 @@ export default function Page() {
         console.warn("Vibration not supported on this device.");
       }
     }
-  }, [settings.soundOn, settings.vibrateOn, isResetting]);
+  }, [settings.soundOn, settings.vibrateOn]);
 
   // まずタイマーを初期化（コールバックなし）
   const workoutTimer = useTimer(settings.workoutTime);
@@ -180,7 +164,6 @@ export default function Page() {
 
   const isResting = isInRestMode;
   const isAnythingRunning = workoutTimer.isRunning || restTimer.isRunning;
-  const isFinished = !isAnythingRunning && sessionSets > 0;
 
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
@@ -259,15 +242,10 @@ export default function Page() {
 
   const handleMasterReset = () => {
     console.log("handleMasterReset called - resetting all timers and state");
-
     // Immediately disable callbacks to prevent any onEnd from being called
     console.log("Disabling timer callbacks");
     workoutTimer.disableCallbacks();
     restTimer.disableCallbacks();
-
-    // Set resetting flag to prevent timer end sounds
-    setIsResetting(true);
-
     // First stop the timers to prevent onEnd callbacks from being triggered
     if (workoutTimer.isRunning) {
       console.log("Stopping workout timer");
@@ -277,7 +255,6 @@ export default function Page() {
       console.log("Stopping rest timer");
       restTimer.pause();
     }
-
     // Then reset them (the timer hook will handle preventing callbacks during reset)
     workoutTimer.reset();
     restTimer.reset();
@@ -286,16 +263,13 @@ export default function Page() {
     setSessionStartTime(null);
     setIsWorkoutMode(false);
     setIsInRestMode(false);
-
     // Clear resetting flag and re-enable callbacks after a short delay
     setTimeout(() => {
-      setIsResetting(false);
       console.log("Re-enabling timer callbacks");
       workoutTimer.enableCallbacks();
       restTimer.enableCallbacks();
       console.log("Reset flag cleared and callbacks re-enabled");
     }, 150);
-
     console.log("handleMasterReset completed");
   };
 
@@ -306,7 +280,7 @@ export default function Page() {
     if (sessionStartTime && sessionSets > 0) {
       console.log("Saving workout history...");
       // 正確な修行時間を計算
-      let totalWorkoutTime = calculateWorkoutTime();
+      const totalWorkoutTime = calculateWorkoutTime();
 
       // 日本時間で現在の日時を取得
       const now = new Date();
