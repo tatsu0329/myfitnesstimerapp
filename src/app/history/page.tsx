@@ -14,6 +14,7 @@ import {
 import { WorkoutHistoryItem } from "../../types";
 import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
+import { trackHistoryDelete, trackPageView } from "../../utils/gtag";
 
 export default function HistoryPage() {
   const router = useRouter();
@@ -47,12 +48,16 @@ export default function HistoryPage() {
   };
 
   const handleDelete = async (id: string) => {
+    console.log(`Attempting to delete history item with ID: ${id}`);
     try {
       const response = await fetch(`/api/history/${id}`, {
         method: "DELETE",
       });
 
+      console.log(`Delete response status: ${response.status}`);
+
       if (response.ok) {
+        console.log(`Successfully deleted history item with ID: ${id}`);
         setHistory((prev) => prev.filter((item) => item.id !== id));
         // 選択された日付のセッションも更新
         if (selectedDate) {
@@ -60,9 +65,17 @@ export default function HistoryPage() {
             prev.filter((item) => item.id !== id)
           );
         }
+        trackHistoryDelete("single");
+      } else {
+        const errorData = await response.json();
+        console.error("Delete failed:", errorData);
+        alert(
+          `履歴の削除に失敗しました: ${errorData.message || "不明なエラー"}`
+        );
       }
     } catch (error) {
       console.error("Failed to delete history item:", error);
+      alert("履歴の削除中にエラーが発生しました");
     }
   };
 
@@ -109,9 +122,10 @@ export default function HistoryPage() {
     history.forEach((item) => {
       // 日本時間で記録されたデータを正しく処理
       const itemDate = new Date(item.date);
-      // 日本時間からローカル時間に変換（UTC+9からローカルタイムゾーンに）
-      const localDate = new Date(itemDate.getTime() - 9 * 60 * 60 * 1000);
-      const dateKey = localDate.toISOString().split("T")[0];
+
+      // 日本時間の日付を取得（UTC+9）
+      const japanDate = new Date(itemDate.getTime() + 9 * 60 * 60 * 1000);
+      const dateKey = japanDate.toISOString().split("T")[0];
 
       if (!dateStats[dateKey]) {
         dateStats[dateKey] = { sets: 0, totalTime: 0, sessions: [] };
@@ -134,9 +148,9 @@ export default function HistoryPage() {
     history.forEach((item) => {
       // 日本時間で記録されたデータを正しく処理
       const itemDate = new Date(item.date);
-      const localDate = new Date(itemDate.getTime() - 9 * 60 * 60 * 1000);
+      const japanDate = new Date(itemDate.getTime() + 9 * 60 * 60 * 1000);
 
-      if (localDate.getFullYear() === year && localDate.getMonth() === month) {
+      if (japanDate.getFullYear() === year && japanDate.getMonth() === month) {
         monthStats.sessions += 1;
         monthStats.totalTime += item.totalTime || 0;
       }
@@ -210,23 +224,29 @@ export default function HistoryPage() {
   ).getDay();
 
   const getSessionForDate = (date: number) => {
+    // 日本時間で日付を作成
     const d = new Date(
       currentMonth.getFullYear(),
       currentMonth.getMonth(),
       date
     );
-    const dateString = d.toISOString().split("T")[0];
+    // 日本時間に調整（UTC+9）
+    const japanDate = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+    const dateString = japanDate.toISOString().split("T")[0];
     const dateStats = getDateStats();
     return dateStats[dateString];
   };
 
   const handleDateClick = (date: number) => {
+    // 日本時間で日付を作成
     const d = new Date(
       currentMonth.getFullYear(),
       currentMonth.getMonth(),
       date
     );
-    const dateString = d.toISOString().split("T")[0];
+    // 日本時間に調整（UTC+9）
+    const japanDate = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+    const dateString = japanDate.toISOString().split("T")[0];
     const dateStats = getDateStats();
     const stats = dateStats[dateString];
 
@@ -234,6 +254,7 @@ export default function HistoryPage() {
       setSelectedDate(dateString);
       setSelectedDateSessions(stats.sessions);
       setViewMode("date");
+      trackPageView("history_date_view");
     }
   };
 
@@ -245,6 +266,7 @@ export default function HistoryPage() {
     if (monthStats.sessions > 0) {
       setViewMode("month");
       setSelectedDate(null);
+      trackPageView("history_month_view");
     }
   };
 
@@ -252,6 +274,7 @@ export default function HistoryPage() {
     setViewMode("all");
     setSelectedDate(null);
     setSelectedDateSessions([]);
+    trackPageView("history_all_view");
   };
 
   const handleClearHistory = async () => {
@@ -260,23 +283,36 @@ export default function HistoryPage() {
         "本当にすべての修行記録を削除しますか？この操作は元に戻せません。"
       )
     ) {
+      console.log("Attempting to clear all history");
       try {
         const response = await fetch("/api/history", {
           method: "DELETE",
         });
 
+        console.log(`Clear history response status: ${response.status}`);
+
         if (!response.ok) {
-          throw new Error("Failed to delete history");
+          const errorData = await response.json();
+          console.error("Clear history failed:", errorData);
+          throw new Error(
+            `Failed to delete history: ${errorData.message || "不明なエラー"}`
+          );
         }
 
+        console.log("Successfully cleared all history");
         setHistory([]);
         setSelectedDate(null);
         setSelectedDateSessions([]);
         setViewMode("all");
         alert("すべての修行記録が削除されました。");
+        trackHistoryDelete("all");
       } catch (error) {
         console.error("Failed to clear history:", error);
-        alert("修行記録の削除に失敗しました。");
+        alert(
+          `修行記録の削除に失敗しました: ${
+            error instanceof Error ? error.message : "不明なエラー"
+          }`
+        );
       }
     }
   };
@@ -297,7 +333,7 @@ export default function HistoryPage() {
         ></div>
       </div>
 
-      <div className="relative z-10 p-6 max-w-md mx-auto">
+      <div className="relative z-0 p-6 max-w-md mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <button

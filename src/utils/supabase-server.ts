@@ -15,3 +15,4 @@ if (!supabaseServiceKey) {
 }
 
 export const supabaseServer = createClient(supabaseUrl, supabaseServiceKey);
+ 

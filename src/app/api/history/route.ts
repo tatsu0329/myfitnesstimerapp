@@ -72,13 +72,30 @@ export async function GET() {
  */
 export async function POST(req: NextRequest) {
   try {
+    // 環境変数の確認
+    if (
+      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      !process.env.SUPABASE_SERVICE_KEY
+    ) {
+      console.error("Missing Supabase environment variables");
+      return NextResponse.json(
+        {
+          message: "Supabase configuration is missing",
+          error: "Missing environment variables",
+        },
+        { status: 500 }
+      );
+    }
+
     const { bodyPart, date, sets, totalTime }: WorkoutHistoryItem =
       await req.json();
+
+    console.log("Saving history item:", { bodyPart, date, sets, totalTime });
 
     const newHistoryItemForDb = {
       date,
       sets,
-      duration: totalTime,
+      duration: Math.round(totalTime),
       body_part: bodyPart,
     };
 
@@ -90,7 +107,7 @@ export async function POST(req: NextRequest) {
     if (error) {
       console.error("Supabase insert error:", error);
       return NextResponse.json(
-        { message: "Failed to create history", error },
+        { message: "Failed to create history", error: error.message },
         { status: 500 }
       );
     }
@@ -104,6 +121,7 @@ export async function POST(req: NextRequest) {
       createdAt: item.created_at,
     }));
 
+    console.log("History saved successfully:", result);
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     console.error("Error processing request:", error);
