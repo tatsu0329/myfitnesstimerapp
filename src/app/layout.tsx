@@ -15,7 +15,7 @@ import { GA_TRACKING_ID, pageview } from "../utils/gtag";
 declare global {
   interface Window {
     gtag: (
-      command: 'config' | 'event',
+      command: "config" | "event",
       targetId: string,
       config?: {
         page_location?: string;
@@ -59,8 +59,6 @@ const AppContent = ({ children }: { children: React.ReactNode }) => {
       document.documentElement.classList.remove("dark");
     }
   }, [isDark]);
-
-  const isTimerPage = pathname === "/";
 
   return (
     <html lang="ja" className={clsx(isDark && "dark")}>

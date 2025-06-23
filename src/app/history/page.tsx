@@ -5,11 +5,9 @@ import {
   ArrowLeft,
   Trash2,
   Calendar,
-  Clock,
   Target,
   ChevronLeft,
   ChevronRight,
-  X,
 } from "lucide-react";
 import { WorkoutHistoryItem } from "../../types";
 import { useRouter } from "next/navigation";
@@ -24,9 +22,6 @@ export default function HistoryPage() {
     new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   );
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [selectedDateSessions, setSelectedDateSessions] = useState<
-    WorkoutHistoryItem[]
-  >([]);
   const [viewMode, setViewMode] = useState<"all" | "month" | "date">("all");
 
   useEffect(() => {
@@ -44,38 +39,6 @@ export default function HistoryPage() {
       console.error("Failed to fetch history:", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    console.log(`Attempting to delete history item with ID: ${id}`);
-    try {
-      const response = await fetch(`/api/history/${id}`, {
-        method: "DELETE",
-      });
-
-      console.log(`Delete response status: ${response.status}`);
-
-      if (response.ok) {
-        console.log(`Successfully deleted history item with ID: ${id}`);
-        setHistory((prev) => prev.filter((item) => item.id !== id));
-        // 選択された日付のセッションも更新
-        if (selectedDate) {
-          setSelectedDateSessions((prev) =>
-            prev.filter((item) => item.id !== id)
-          );
-        }
-        trackHistoryDelete("single");
-      } else {
-        const errorData = await response.json();
-        console.error("Delete failed:", errorData);
-        alert(
-          `履歴の削除に失敗しました: ${errorData.message || "不明なエラー"}`
-        );
-      }
-    } catch (error) {
-      console.error("Failed to delete history item:", error);
-      alert("履歴の削除中にエラーが発生しました");
     }
   };
 
@@ -98,14 +61,6 @@ export default function HistoryPage() {
       month: "long",
       day: "numeric",
       weekday: "long",
-    });
-  };
-
-  const formatTimeOnly = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString("ja-JP", {
-      hour: "2-digit",
-      minute: "2-digit",
     });
   };
 
@@ -198,10 +153,7 @@ export default function HistoryPage() {
     return result;
   };
 
-  const getTotalWorkouts = () => history.length;
   const getTotalSessions = () => history.length;
-  const getTotalSets = () =>
-    history.reduce((sum, item) => sum + (item.sets || 0), 0);
   const getTotalTime = () => {
     const total = history.reduce((sum, item) => {
       const time = item.totalTime || 0;
@@ -252,7 +204,6 @@ export default function HistoryPage() {
 
     if (stats && stats.sessions.length > 0) {
       setSelectedDate(dateString);
-      setSelectedDateSessions(stats.sessions);
       setViewMode("date");
       trackPageView("history_date_view");
     }
@@ -273,7 +224,6 @@ export default function HistoryPage() {
   const handleBackToAll = () => {
     setViewMode("all");
     setSelectedDate(null);
-    setSelectedDateSessions([]);
     trackPageView("history_all_view");
   };
 
@@ -302,7 +252,6 @@ export default function HistoryPage() {
         console.log("Successfully cleared all history");
         setHistory([]);
         setSelectedDate(null);
-        setSelectedDateSessions([]);
         setViewMode("all");
         alert("すべての修行記録が削除されました。");
         trackHistoryDelete("all");

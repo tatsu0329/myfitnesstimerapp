@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Play, Pause, Check, Volume2, X, Bell } from "lucide-react";
+import { Play, Pause, X, Bell } from "lucide-react";
 import { WorkoutHistoryItem } from "../types";
 import { useTimer } from "../hooks/useTimer";
 import { useSettings } from "../hooks/useSettings";
@@ -25,7 +25,8 @@ const initializeAudio = async () => {
     // Create audio context
     if (!audioContext) {
       audioContext = new (window.AudioContext ||
-        (window as any).webkitAudioContext)();
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext)();
     }
 
     // Resume audio context if suspended
@@ -35,8 +36,8 @@ const initializeAudio = async () => {
 
     audioUnlocked = true;
     console.log("Audio context initialized successfully");
-  } catch (error) {
-    console.warn("Audio initialization failed:", error);
+  } catch {
+    console.warn("Audio initialization failed");
     audioUnlocked = true; // Mark as unlocked to avoid repeated attempts
   }
 };
@@ -76,8 +77,8 @@ const playNotificationSound = async (volume: number) => {
 
       console.log("Notification sound played successfully");
     }
-  } catch (error) {
-    console.warn("Audio playback failed:", error);
+  } catch {
+    console.warn("Audio playback failed");
   }
 };
 
@@ -113,8 +114,8 @@ export default function Page() {
       console.log("Sound is enabled, playing notification sound");
       try {
         await playNotificationSound(0.5);
-      } catch (error) {
-        console.warn("Timer end sound failed:", error);
+      } catch {
+        console.warn("Timer end sound failed");
       }
     } else {
       console.log("Sound is disabled, skipping notification sound");
@@ -122,7 +123,7 @@ export default function Page() {
     if (settings.vibrateOn && navigator.vibrate) {
       try {
         navigator.vibrate(200); // 200msの振動
-      } catch (e) {
+      } catch {
         console.warn("Vibration not supported on this device.");
       }
     }
@@ -203,8 +204,8 @@ export default function Page() {
         await playNotificationSound(0);
         setIsAudioUnlocked(true);
         console.log("Audio unlocked successfully");
-      } catch (error) {
-        console.warn("Initial audio test failed:", error);
+      } catch {
+        console.warn("Initial audio test failed");
         setIsAudioUnlocked(true); // Still mark as unlocked to avoid repeated attempts
       }
     }
