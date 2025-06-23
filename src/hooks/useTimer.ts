@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 export const useTimer = (initialTime: number, onEnd?: () => void) => {
   const [time, setTime] = useState(initialTime);
   const [isRunning, setIsRunning] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
   const onEndRef = useRef(onEnd);
   const initialTimeRef = useRef(initialTime);
   const startTimeRef = useRef<number | null>(null);
@@ -80,7 +79,6 @@ export const useTimer = (initialTime: number, onEnd?: () => void) => {
     console.log("Timer reset called - resetting timer state");
     // Disable callbacks during reset
     callbackDisabledRef.current = true;
-    setIsResetting(true);
     setIsRunning(false);
     setTime(initialTimeRef.current);
     startTimeRef.current = null;
@@ -89,7 +87,6 @@ export const useTimer = (initialTime: number, onEnd?: () => void) => {
     // Re-enable callbacks after a short delay
     setTimeout(() => {
       callbackDisabledRef.current = false;
-      setIsResetting(false);
       console.log("Timer reset completed - callbacks re-enabled");
     }, 100);
   }, []);

@@ -6,7 +6,6 @@ import { WorkoutHistoryItem } from "../types";
 import { useTimer } from "../hooks/useTimer";
 import { useSettings } from "../hooks/useSettings";
 import { clsx } from "clsx";
-import { useRouter } from "next/navigation";
 import { useLayout } from "../contexts/LayoutContext";
 import {
   trackWorkoutStart,
@@ -83,7 +82,6 @@ const playNotificationSound = async (volume: number) => {
 };
 
 export default function Page() {
-  const router = useRouter();
   const { settings, updateSettings } = useSettings();
   const { setShowFooter } = useLayout();
 
