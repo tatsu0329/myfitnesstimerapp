@@ -4,15 +4,14 @@ import { createClient } from "@supabase/supabase-js";
 // クライアントサイドには絶対に漏洩させないでください。
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+const supabaseKey = process.env.SUPABASE_KEY;
 
 if (!supabaseUrl) {
   throw new Error("Missing env.NEXT_PUBLIC_SUPABASE_URL");
 }
 
-if (!supabaseServiceKey) {
-  throw new Error("Missing env.SUPABASE_SERVICE_KEY");
+if (!supabaseKey) {
+  throw new Error("Missing env.SUPABASE_KEY");
 }
 
-export const supabaseServer = createClient(supabaseUrl, supabaseServiceKey);
- 
+export const supabaseServer = createClient(supabaseUrl, supabaseKey);
