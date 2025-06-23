@@ -87,6 +87,20 @@ const AppContent = ({ children }: { children: React.ReactNode }) => {
         )}
       </head>
       <body className="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('theme');
+                  if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
         <div className="flex flex-col h-screen">
           <main
             className={`flex-grow overflow-y-auto ${showFooter && "pb-24"}`}
