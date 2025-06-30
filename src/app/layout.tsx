@@ -50,6 +50,10 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <head>
+        <meta
+          name="google-site-verification"
+          content="iGf-PF9uOWYiJU0QpuGr559zSe4duSwiDVj9cL1niMs"
+        />
         {/* Google Analytics (推奨: next/script) */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-XKYCC58FW7"
