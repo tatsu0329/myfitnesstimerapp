@@ -5,6 +5,7 @@ import "./globals.css";
 import { LayoutProvider } from "../contexts/LayoutContext";
 import AppContent from "./AppContent";
 import { useEffect } from "react";
+import Script from "next/script";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -49,21 +50,19 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <head>
-        {/* Google Analytics */}
-        <script
-          async
+        {/* Google Analytics (推奨: next/script) */}
+        <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-XKYCC58FW7"
-        ></script>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-XKYCC58FW7');
-            `,
-          }}
+          strategy="afterInteractive"
         />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-XKYCC58FW7');
+          `}
+        </Script>
       </head>
       <body
         className={`${inter.className} bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 zen-fade-in`}
