@@ -18,11 +18,17 @@ export default function HistoryPage() {
   const router = useRouter();
   const [history, setHistory] = useState<WorkoutHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isHydrated, setIsHydrated] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(
     new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   );
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"all" | "month" | "date">("all");
+
+  // ハイドレーション完了を検知
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   useEffect(() => {
     fetchHistory();
@@ -66,52 +72,77 @@ export default function HistoryPage() {
 
   // 日付ごとの統計を計算
   const getDateStats = () => {
-    const dateStats: {
-      [key: string]: {
-        sets: number;
-        totalTime: number;
-        sessions: WorkoutHistoryItem[];
-      };
-    } = {};
+    try {
+      const dateStats: {
+        [key: string]: {
+          sets: number;
+          totalTime: number;
+          sessions: WorkoutHistoryItem[];
+        };
+      } = {};
 
-    history.forEach((item) => {
-      // 日本時間で記録されたデータを正しく処理
-      const itemDate = new Date(item.date);
+      history.forEach((item) => {
+        try {
+          // 日本時間で記録されたデータを正しく処理
+          const itemDate = new Date(item.date);
 
-      // 日本時間の日付を取得（UTC+9）
-      const japanDate = new Date(itemDate.getTime() + 9 * 60 * 60 * 1000);
-      const dateKey = japanDate.toISOString().split("T")[0];
+          // 日本時間の日付を取得（UTC+9）
+          const japanDate = new Date(itemDate.getTime() + 9 * 60 * 60 * 1000);
+          const dateKey = japanDate.toISOString().split("T")[0];
 
-      if (!dateStats[dateKey]) {
-        dateStats[dateKey] = { sets: 0, totalTime: 0, sessions: [] };
-      }
-      dateStats[dateKey].sets += item.sets || 0;
-      dateStats[dateKey].totalTime += item.totalTime || 0;
-      dateStats[dateKey].sessions.push(item);
-    });
+          if (!dateStats[dateKey]) {
+            dateStats[dateKey] = { sets: 0, totalTime: 0, sessions: [] };
+          }
+          dateStats[dateKey].sets += item.sets || 0;
+          dateStats[dateKey].totalTime += item.totalTime || 0;
+          dateStats[dateKey].sessions.push(item);
+        } catch (error) {
+          console.error("Error processing history item:", item, error);
+        }
+      });
 
-    return dateStats;
+      return dateStats;
+    } catch (error) {
+      console.error("Error in getDateStats:", error);
+      return {};
+    }
   };
 
   // 月別統計を計算
   const getMonthStats = (year: number, month: number) => {
-    const monthStats = {
-      sessions: 0,
-      totalTime: 0,
-    };
+    try {
+      const monthStats = {
+        sessions: 0,
+        totalTime: 0,
+      };
 
-    history.forEach((item) => {
-      // 日本時間で記録されたデータを正しく処理
-      const itemDate = new Date(item.date);
-      const japanDate = new Date(itemDate.getTime() + 9 * 60 * 60 * 1000);
+      history.forEach((item) => {
+        try {
+          // 日本時間で記録されたデータを正しく処理
+          const itemDate = new Date(item.date);
+          const japanDate = new Date(itemDate.getTime() + 9 * 60 * 60 * 1000);
 
-      if (japanDate.getFullYear() === year && japanDate.getMonth() === month) {
-        monthStats.sessions += 1;
-        monthStats.totalTime += item.totalTime || 0;
-      }
-    });
+          if (
+            japanDate.getFullYear() === year &&
+            japanDate.getMonth() === month
+          ) {
+            monthStats.sessions += 1;
+            monthStats.totalTime += item.totalTime || 0;
+          }
+        } catch (error) {
+          console.error(
+            "Error processing history item for month stats:",
+            item,
+            error
+          );
+        }
+      });
 
-    return monthStats;
+      return monthStats;
+    } catch (error) {
+      console.error("Error in getMonthStats:", error);
+      return { sessions: 0, totalTime: 0 };
+    }
   };
 
   // 現在表示すべき統計データを取得
@@ -176,36 +207,45 @@ export default function HistoryPage() {
   ).getDay();
 
   const getSessionForDate = (date: number) => {
-    // 日本時間で日付を作成
-    const d = new Date(
-      currentMonth.getFullYear(),
-      currentMonth.getMonth(),
-      date
-    );
-    // 日本時間に調整（UTC+9）
-    const japanDate = new Date(d.getTime() + 9 * 60 * 60 * 1000);
-    const dateString = japanDate.toISOString().split("T")[0];
-    const dateStats = getDateStats();
-    return dateStats[dateString];
+    try {
+      // 日本時間で日付を作成
+      const d = new Date(
+        currentMonth.getFullYear(),
+        currentMonth.getMonth(),
+        date
+      );
+      // 日本時間に調整（UTC+9）
+      const japanDate = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+      const dateString = japanDate.toISOString().split("T")[0];
+      const dateStats = getDateStats();
+      return dateStats[dateString];
+    } catch (error) {
+      console.error("Error in getSessionForDate:", error);
+      return undefined;
+    }
   };
 
   const handleDateClick = (date: number) => {
-    // 日本時間で日付を作成
-    const d = new Date(
-      currentMonth.getFullYear(),
-      currentMonth.getMonth(),
-      date
-    );
-    // 日本時間に調整（UTC+9）
-    const japanDate = new Date(d.getTime() + 9 * 60 * 60 * 1000);
-    const dateString = japanDate.toISOString().split("T")[0];
-    const dateStats = getDateStats();
-    const stats = dateStats[dateString];
+    try {
+      // 日本時間で日付を作成
+      const d = new Date(
+        currentMonth.getFullYear(),
+        currentMonth.getMonth(),
+        date
+      );
+      // 日本時間に調整（UTC+9）
+      const japanDate = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+      const dateString = japanDate.toISOString().split("T")[0];
+      const dateStats = getDateStats();
+      const stats = dateStats[dateString];
 
-    if (stats && stats.sessions.length > 0) {
-      setSelectedDate(dateString);
-      setViewMode("date");
-      trackPageView("history_date_view");
+      if (stats && stats.sessions.length > 0) {
+        setSelectedDate(dateString);
+        setViewMode("date");
+        trackPageView("/history/date");
+      }
+    } catch (error) {
+      console.error("Error in handleDateClick:", error);
     }
   };
 
@@ -268,6 +308,25 @@ export default function HistoryPage() {
 
   const currentStats = getCurrentStats();
 
+  // ハイドレーションが完了するまでローディング表示
+  if (!isHydrated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 via-amber-50 to-orange-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-amber-200 to-orange-300 dark:from-amber-800 dark:to-orange-900 flex items-center justify-center shadow-lg animate-pulse">
+            <div className="w-8 h-8 rounded-full bg-white dark:bg-gray-800"></div>
+          </div>
+          <h1 className="text-2xl font-light text-stone-800 dark:text-stone-200 mb-2">
+            記録を読み込み中
+          </h1>
+          <p className="text-stone-600 dark:text-stone-400 text-sm">
+            準備中...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-stone-50 via-amber-50 to-orange-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Zen Background Pattern */}
@@ -291,7 +350,7 @@ export default function HistoryPage() {
           >
             <ArrowLeft className="w-5 h-5 text-stone-600 dark:text-stone-400" />
           </button>
-          <h1 className="text-2xl font-light text-stone-800 dark:text-stone-200 tracking-wide">
+          <h1 className="zen-gradient-text zen-fade-in text-2xl font-light text-stone-800 dark:text-stone-200 tracking-wide">
             修行記録
           </h1>
           <button
@@ -304,7 +363,7 @@ export default function HistoryPage() {
         </div>
 
         {/* Zen Message */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 zen-fade-in">
           <div className="w-16 h-px bg-gradient-to-r from-transparent via-stone-300 dark:via-stone-600 to-transparent mx-auto mb-4"></div>
           <p className="text-stone-500 dark:text-stone-400 text-sm font-light italic">
             「積み重ねた修行は、心の成長の証」
@@ -313,7 +372,7 @@ export default function HistoryPage() {
         </div>
 
         {/* Statistics */}
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-stone-200/50 dark:border-gray-700/50 mb-8">
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-stone-200/50 dark:border-gray-700/50 mb-8 card-zen zen-shadow zen-fade-in">
           <div className="text-center mb-6">
             <div className="flex items-center justify-center space-x-3 mb-2">
               <h3 className="text-lg font-medium text-stone-700 dark:text-stone-300">
@@ -372,7 +431,7 @@ export default function HistoryPage() {
         </div>
 
         {/* Calendar View */}
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-stone-200/50 dark:border-gray-700/50 mb-8">
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-stone-200/50 dark:border-gray-700/50 mb-8 card-zen zen-shadow zen-fade-in">
           <div className="flex items-center justify-between mb-6">
             <button
               onClick={handleMonthClick}
@@ -454,7 +513,7 @@ export default function HistoryPage() {
 
         {/* No History Message */}
         {history.length === 0 && !loading && (
-          <div className="text-center py-12">
+          <div className="text-center py-12 zen-fade-in">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-stone-100 to-gray-100 dark:from-stone-900/30 dark:to-gray-900/30 flex items-center justify-center">
               <Calendar className="w-8 h-8 text-stone-400 dark:text-stone-500" />
             </div>
@@ -469,7 +528,7 @@ export default function HistoryPage() {
 
         {/* Loading */}
         {loading && (
-          <div className="text-center py-12">
+          <div className="text-center py-12 zen-fade-in">
             <div className="w-8 h-8 mx-auto mb-4 border-2 border-stone-300 dark:border-stone-600 border-t-amber-500 rounded-full animate-spin"></div>
             <p className="text-stone-500 dark:text-stone-400 text-sm">
               読み込み中...
@@ -478,7 +537,7 @@ export default function HistoryPage() {
         )}
 
         {/* Zen Footer Message */}
-        <div className="text-center mt-8">
+        <div className="text-center mt-8 zen-fade-in">
           <div className="w-16 h-px bg-gradient-to-r from-transparent via-stone-300 dark:via-stone-600 to-transparent mx-auto mb-4"></div>
           <p className="text-stone-500 dark:text-stone-400 text-xs font-light italic">
             「一歩一歩、着実に心を鍛えることが大切」

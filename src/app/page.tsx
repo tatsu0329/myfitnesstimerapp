@@ -83,8 +83,14 @@ const playNotificationSound = async (volume: number) => {
 };
 
 export default function Page() {
-  const { settings, updateSettings } = useSettings();
+  const {
+    settings,
+    updateSettings,
+    mounted: settingsMounted,
+    clearLocalStorage,
+  } = useSettings();
   const { setShowFooter } = useLayout();
+  const [isHydrated, setIsHydrated] = useState(false);
 
   const [sessionSets, setSessionSets] = useState(0);
   const [sessionDuration, setSessionDuration] = useState(0);
@@ -103,6 +109,18 @@ export default function Page() {
   const [isInRestMode, setIsInRestMode] = useState(false);
   const [isAudioUnlocked, setIsAudioUnlocked] = useState(false);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
+
+  // ハイドレーション完了を検知
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  // Update tempSettings when settings change (after mounting)
+  useEffect(() => {
+    if (settingsMounted) {
+      setTempSettings(settings);
+    }
+  }, [settings, settingsMounted]);
 
   useEffect(() => {
     setShowFooter(!isWorkoutMode);
@@ -209,6 +227,9 @@ export default function Page() {
         setIsAudioUnlocked(true); // Still mark as unlocked to avoid repeated attempts
       }
     }
+    // タイマーを必ずリセット
+    workoutTimer.reset();
+    restTimer.reset();
     setIsWorkoutMode(true);
     setIsInRestMode(false);
     workoutTimer.start();
@@ -273,53 +294,77 @@ export default function Page() {
   };
 
   const handleFinishWorkout = async () => {
-    console.log("handleFinishWorkout called - starting workout finish process");
+    try {
+      console.log("handleFinishWorkout called - finishing workout session");
+      // Immediately disable callbacks to prevent any onEnd from being called
+      console.log("Disabling timer callbacks");
+      workoutTimer.disableCallbacks();
+      restTimer.disableCallbacks();
 
-    // セッションが開始されている場合は履歴を保存
-    if (sessionStartTime && sessionSets > 0) {
-      console.log("Saving workout history...");
-      // 正確な修行時間を計算
-      const totalWorkoutTime = calculateWorkoutTime();
-
-      // 日本時間で現在の日時を取得
-      const now = new Date();
-      const japanTime = new Date(now.getTime() + 9 * 60 * 60 * 1000); // UTC+9
-
-      const historyItem: WorkoutHistoryItem = {
-        bodyPart: "chest", // 固定値として設定
-        sets: sessionSets,
-        totalTime: Math.round(totalWorkoutTime), // 整数に丸める
-        date: japanTime.toISOString(), // 日本時間で記録
-      };
-
-      try {
-        const response = await fetch("/api/history", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(historyItem),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error("History save error:", errorData);
-          throw new Error(
-            `Failed to save history: ${response.status} ${response.statusText}`
-          );
-        }
-
-        console.log("History saved successfully");
-        trackWorkoutComplete(sessionSets, Math.round(totalWorkoutTime));
-      } catch (error) {
-        console.error("Error saving history:", error);
-        // エラーが発生しても修行を終了する
-        alert("履歴の保存に失敗しましたが、修行は正常に終了しました。");
+      // Stop all timers
+      if (workoutTimer.isRunning) {
+        console.log("Stopping workout timer");
+        workoutTimer.pause();
       }
-    }
+      if (restTimer.isRunning) {
+        console.log("Stopping rest timer");
+        restTimer.pause();
+      }
 
-    console.log("Calling handleMasterReset...");
-    // 常に設定画面に戻る
-    handleMasterReset();
-    console.log("handleFinishWorkout completed");
+      // Calculate final workout time
+      const finalWorkoutTime = calculateWorkoutTime();
+      console.log("Final workout time calculated:", finalWorkoutTime);
+
+      // Save to history
+      if (sessionStartTime && finalWorkoutTime > 0) {
+        const now = new Date();
+        const japanTime = new Date(now.getTime() + 9 * 60 * 60 * 1000); // UTC+9
+
+        const historyItem: WorkoutHistoryItem = {
+          date: japanTime.toISOString(), // 日本時間で記録
+          bodyPart: "chest", // 固定値（将来的に拡張可能）
+          sets: sessionSets,
+          totalTime: finalWorkoutTime,
+        };
+
+        console.log("Saving history item:", historyItem);
+
+        try {
+          const response = await fetch("/api/history", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(historyItem),
+          });
+
+          if (response.ok) {
+            console.log("History saved successfully");
+            trackWorkoutComplete(finalWorkoutTime, sessionSets);
+          } else {
+            console.error("Failed to save history:", response.statusText);
+          }
+        } catch (error) {
+          console.error("Error saving history:", error);
+        }
+      }
+
+      // Reset all state
+      setSessionSets(0);
+      setSessionDuration(0);
+      setSessionStartTime(null);
+      setIsWorkoutMode(false);
+      setIsInRestMode(false);
+
+      // Re-enable callbacks after a short delay
+      setTimeout(() => {
+        console.log("Re-enabling timer callbacks");
+        workoutTimer.enableCallbacks();
+        restTimer.enableCallbacks();
+      }, 100);
+    } catch (error) {
+      console.error("Error in handleFinishWorkout:", error);
+    }
   };
 
   const formatTime = (seconds: number) => {
@@ -376,34 +421,38 @@ export default function Page() {
     field: "minutes" | "seconds",
     value: string
   ) => {
-    const cleanedValue = value.replace(/[^0-9]/g, "");
+    try {
+      const cleanedValue = value.replace(/[^0-9]/g, "");
 
-    // 手動入力値を更新
-    setManualInputValues((prev) => ({
-      ...prev,
-      [field]: cleanedValue,
-    }));
+      // 手動入力値を更新
+      setManualInputValues((prev) => ({
+        ...prev,
+        [field]: cleanedValue,
+      }));
 
-    const numValue = parseInt(cleanedValue) || 0;
-    const otherField = field === "minutes" ? "seconds" : "minutes";
-    const otherValue = parseInt(manualInputValues[otherField]) || 0;
+      const numValue = parseInt(cleanedValue) || 0;
+      const otherField = field === "minutes" ? "seconds" : "minutes";
+      const otherValue = parseInt(manualInputValues[otherField]) || 0;
 
-    let newMinutes = field === "minutes" ? numValue : otherValue;
-    let newSeconds = field === "seconds" ? numValue : otherValue;
+      let newMinutes = field === "minutes" ? numValue : otherValue;
+      let newSeconds = field === "seconds" ? numValue : otherValue;
 
-    // 分は最大99、秒は最大59
-    if (field === "minutes") {
-      newMinutes = Math.min(numValue, 99);
-    } else {
-      newSeconds = Math.min(numValue, 59);
+      // 分は最大99、秒は最大59
+      if (field === "minutes") {
+        newMinutes = Math.min(numValue, 99);
+      } else {
+        newSeconds = Math.min(numValue, 59);
+      }
+
+      const newTime = newMinutes * 60 + newSeconds;
+      const minTime = 1; // 最小1秒
+
+      const finalTime = Math.max(minTime, newTime);
+      handleTimeChange(type, finalTime);
+      setIsManualInput(true);
+    } catch (error) {
+      console.error("Error in handleInputChange:", error);
     }
-
-    const newTime = newMinutes * 60 + newSeconds;
-    const minTime = 1; // 最小1秒
-
-    const finalTime = Math.max(minTime, newTime);
-    handleTimeChange(type, finalTime);
-    setIsManualInput(true);
   };
 
   const handleSliderChange = (type: "workout" | "rest", value: number) => {
@@ -416,10 +465,29 @@ export default function Page() {
     });
   };
 
+  // ハイドレーションが完了するまでローディング表示
+  if (!isHydrated || !settingsMounted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 via-amber-50 to-orange-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-amber-200 to-orange-300 dark:from-amber-800 dark:to-orange-900 flex items-center justify-center shadow-lg animate-pulse">
+            <div className="w-8 h-8 rounded-full bg-white dark:bg-gray-800"></div>
+          </div>
+          <h1 className="text-2xl font-light text-stone-800 dark:text-stone-200 mb-2">
+            心を整える
+          </h1>
+          <p className="text-stone-600 dark:text-stone-400 text-sm">
+            準備中...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Timer Mode - タイマー画面
   if (isWorkoutMode) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-stone-50 via-amber-50 to-orange-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col">
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 via-amber-50 to-orange-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col zen-fade-in">
         {/* Zen Background Pattern */}
         <div className="fixed inset-0 opacity-5 dark:opacity-10">
           <div
@@ -432,14 +500,14 @@ export default function Page() {
           ></div>
         </div>
 
-        <div className="relative z-0 flex-1 flex flex-col items-center justify-center p-6">
+        <div className="relative z-0 flex-1 flex flex-col items-center justify-center p-6 zen-fade-in">
           {/* Breathing Circle */}
           <div className="relative mb-8">
             {/* Outer Ring - Breathing Animation */}
             <div
               className={clsx(
                 "w-80 h-80 rounded-full border-4 border-stone-300/30 dark:border-stone-600/30",
-                "flex items-center justify-center transition-all duration-3000 ease-in-out",
+                "flex items-center justify-center transition-all duration-3000 ease-in-out card-zen zen-shadow zen-pulse",
                 isResting && "animate-pulse"
               )}
               style={{
@@ -449,13 +517,16 @@ export default function Page() {
               }}
             >
               {/* Inner Circle */}
-              <div className="w-64 h-64 rounded-full bg-gradient-to-br from-amber-100/80 to-orange-100/80 dark:from-amber-900/30 dark:to-orange-900/30 backdrop-blur-sm border border-amber-200/50 dark:border-amber-700/30 flex items-center justify-center shadow-2xl">
+              <div className="w-64 h-64 rounded-full bg-gradient-to-br from-amber-100/80 to-orange-100/80 dark:from-amber-900/30 dark:to-orange-900/30 backdrop-blur-sm border border-amber-200/50 dark:border-amber-700/30 flex items-center justify-center shadow-2xl zen-border-gradient">
                 {/* Timer Display */}
                 <div className="text-center">
-                  <div className="text-6xl font-light text-stone-800 dark:text-stone-200 tracking-widest mb-2">
+                  <div
+                    className="text-6xl font-light text-stone-800 dark:text-stone-200 tracking-widest mb-2 zen-gradient-text"
+                    style={{ outline: "none", boxShadow: "none" }}
+                  >
                     {formatTime(isResting ? restTimer.time : workoutTimer.time)}
                   </div>
-                  <div className="text-lg text-stone-600 dark:text-stone-400 font-light">
+                  <div className="text-lg text-stone-600 dark:text-stone-400 font-light zen-fade-in">
                     {isResting ? "静寂" : "修行"}
                   </div>
                 </div>
@@ -467,6 +538,7 @@ export default function Page() {
               <svg
                 className="w-full h-full transform -rotate-90"
                 viewBox="0 0 100 100"
+                style={{ display: "block" }}
               >
                 <circle
                   cx="50"
@@ -509,7 +581,7 @@ export default function Page() {
           </div>
 
           {/* Controls */}
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-6 zen-fade-in">
             {!isAnythingRunning ? (
               <button
                 onClick={handleMasterResume}
@@ -528,7 +600,7 @@ export default function Page() {
 
             <button
               onClick={handleFinishWorkout}
-              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-stone-500 to-gray-600 hover:from-stone-600 hover:to-gray-700 text-white font-medium transition-all duration-300 shadow-lg border border-stone-400/30"
+              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-stone-500 to-gray-600 hover:from-stone-600 hover:to-gray-700 text-white font-medium transition-all duration-300 shadow-lg border border-stone-400/30 btn-zen zen-border-gradient focus:outline-none focus:ring-0"
             >
               修行終了
             </button>
@@ -582,16 +654,16 @@ export default function Page() {
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-amber-200 to-orange-300 dark:from-amber-800 dark:to-orange-900 flex items-center justify-center shadow-lg">
             <div className="w-8 h-8 rounded-full bg-white dark:bg-gray-800"></div>
           </div>
-          <h1 className="text-3xl font-light text-stone-800 dark:text-stone-200 mb-2 tracking-wide">
+          <h1 className="zen-gradient-text zen-fade-in text-3xl font-light text-stone-800 dark:text-stone-200 mb-2 tracking-wide">
             心を整える
           </h1>
-          <p className="text-stone-600 dark:text-stone-400 text-sm">
+          <p className="zen-fade-in text-stone-600 dark:text-stone-400 text-sm">
             今この瞬間に集中する準備を
           </p>
         </div>
 
         {/* Current Settings Display */}
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-stone-200/50 dark:border-gray-700/50">
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-stone-200/50 dark:border-gray-700/50 card-zen zen-shadow zen-fade-in">
           <div className="text-center mb-6">
             <div className="flex items-center justify-center space-x-3 mb-2">
               <h3 className="text-lg font-medium text-stone-700 dark:text-stone-300">
@@ -611,7 +683,7 @@ export default function Page() {
           <div className="space-y-6">
             <button
               onClick={() => handleTimeClick("workout")}
-              className="w-full flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 border border-amber-200/50 dark:border-amber-700/30 hover:from-amber-100 hover:to-orange-100 dark:hover:from-amber-800/40 dark:hover:to-orange-800/40 transition-all duration-300 cursor-pointer"
+              className="w-full flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 border border-amber-200/50 dark:border-amber-700/30 hover:from-amber-100 hover:to-orange-100 dark:hover:from-amber-800/40 dark:hover:to-orange-800/40 transition-all duration-300 cursor-pointer zen-slide-in"
             >
               <div>
                 <span className="text-sm text-stone-600 dark:text-stone-400">
@@ -628,7 +700,7 @@ export default function Page() {
 
             <button
               onClick={() => handleTimeClick("rest")}
-              className="w-full flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-stone-50 to-gray-50 dark:from-stone-900/30 dark:to-gray-900/30 border border-stone-200/50 dark:border-stone-700/30 hover:from-stone-100 hover:to-gray-100 dark:hover:from-stone-800/40 dark:hover:to-gray-800/40 transition-all duration-300 cursor-pointer"
+              className="w-full flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-stone-50 to-gray-50 dark:from-stone-900/30 dark:to-gray-900/30 border border-stone-200/50 dark:border-stone-700/30 hover:from-stone-100 hover:to-gray-100 dark:hover:from-stone-800/40 dark:hover:to-gray-800/40 transition-all duration-300 cursor-pointer zen-slide-in"
             >
               <div>
                 <span className="text-sm text-stone-600 dark:text-stone-400">
@@ -645,12 +717,32 @@ export default function Page() {
           </div>
         </div>
 
+        {/* Debug Button (開発用) */}
+        {process.env.NODE_ENV === "development" && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-4">
+            <div className="text-center">
+              <h4 className="text-sm font-medium text-red-600 dark:text-red-400 mb-2">
+                デバッグ用
+              </h4>
+              <button
+                onClick={clearLocalStorage}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg transition-colors"
+              >
+                localStorageをクリア
+              </button>
+              <p className="text-xs text-red-500 dark:text-red-400 mt-2">
+                JSONエラーが発生した場合に使用してください
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Start Button */}
         <div className="pt-4">
           <button
             onClick={handleStartWorkout}
             className={clsx(
-              "w-full py-8 px-6 rounded-3xl font-medium text-xl transition-all duration-700",
+              "w-full py-8 px-6 rounded-3xl font-medium text-xl transition-all duration-700 btn-zen zen-pulse zen-fade-in",
               "bg-gradient-to-br from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700",
               "text-white shadow-2xl hover:shadow-amber-500/25",
               "transform hover:scale-[1.02] active:scale-[0.98]",
