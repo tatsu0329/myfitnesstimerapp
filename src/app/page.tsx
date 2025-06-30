@@ -260,39 +260,6 @@ export default function Page() {
     }
   };
 
-  const handleMasterReset = () => {
-    console.log("handleMasterReset called - resetting all timers and state");
-    // Immediately disable callbacks to prevent any onEnd from being called
-    console.log("Disabling timer callbacks");
-    workoutTimer.disableCallbacks();
-    restTimer.disableCallbacks();
-    // First stop the timers to prevent onEnd callbacks from being triggered
-    if (workoutTimer.isRunning) {
-      console.log("Stopping workout timer");
-      workoutTimer.pause();
-    }
-    if (restTimer.isRunning) {
-      console.log("Stopping rest timer");
-      restTimer.pause();
-    }
-    // Then reset them (the timer hook will handle preventing callbacks during reset)
-    workoutTimer.reset();
-    restTimer.reset();
-    setSessionSets(0);
-    setSessionDuration(0);
-    setSessionStartTime(null);
-    setIsWorkoutMode(false);
-    setIsInRestMode(false);
-    // Clear resetting flag and re-enable callbacks after a short delay
-    setTimeout(() => {
-      console.log("Re-enabling timer callbacks");
-      workoutTimer.enableCallbacks();
-      restTimer.enableCallbacks();
-      console.log("Reset flag cleared and callbacks re-enabled");
-    }, 150);
-    console.log("handleMasterReset completed");
-  };
-
   const handleFinishWorkout = async () => {
     try {
       console.log("handleFinishWorkout called - finishing workout session");

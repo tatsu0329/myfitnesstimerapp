@@ -1,3 +1,9 @@
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void;
+  }
+}
+
 // Google Analytics 4 (GA4) の設定
 export const GA_TRACKING_ID = process.env.NEXT_PUBLIC_GA_ID || '';
 

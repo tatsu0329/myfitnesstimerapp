@@ -11,7 +11,7 @@ export const defaultSettings: TimerSettings = {
 };
 
 // 安全なJSONパース関数
-const safeJsonParse = (jsonString: string, fallback: any) => {
+const safeJsonParse = (jsonString: string, fallback: unknown) => {
   try {
     if (!jsonString || jsonString.trim() === "") {
       return fallback;
