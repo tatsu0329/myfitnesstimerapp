@@ -13,6 +13,7 @@ import { WorkoutHistoryItem } from "../../types";
 import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
 import { trackHistoryDelete, trackPageView } from "../../utils/gtag";
+import { FaXTwitter, FaLine, FaFacebook, FaInstagram } from "react-icons/fa6";
 
 export default function HistoryPage() {
   const router = useRouter();
@@ -542,6 +543,86 @@ export default function HistoryPage() {
           <p className="text-stone-500 dark:text-stone-400 text-xs font-light italic">
             「一歩一歩、着実に心を鍛えることが大切」
           </p>
+        </div>
+
+        {/* Zen Footer Messageの直前に追加 */}
+        <div className="mt-12 p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
+          <h2 className="text-xl font-semibold mb-4 text-amber-600">
+            みんなの声
+          </h2>
+          <ul className="space-y-4">
+            <li>
+              <blockquote className="text-gray-700 dark:text-gray-200 italic">
+                「毎日の修行が楽しくなりました！集中力が続くようになった気がします。」
+              </blockquote>
+              <div className="text-xs text-gray-500 mt-1">- ユーザーAさん</div>
+            </li>
+            <li>
+              <blockquote className="text-gray-700 dark:text-gray-200 italic">
+                「シンプルなデザインで使いやすい。通知機能も便利です。」
+              </blockquote>
+              <div className="text-xs text-gray-500 mt-1">- ユーザーBさん</div>
+            </li>
+          </ul>
+          <div className="mt-4">
+            <a
+              href="https://docs.google.com/forms/d/e/1FAIpQLSdm5OOSdHQx2UqXsqOSMR6jhpjq1HO9uhcSp3Vjra2oP-pfJQ/viewform?usp=header"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-blue-600 hover:underline"
+            >
+              あなたの体験談もぜひお寄せください！
+            </a>
+          </div>
+        </div>
+
+        {/* SNSシェアボタン */}
+        <div className="mt-8 flex flex-col items-center">
+          <p className="text-sm text-gray-600 mb-2">
+            このアプリが役立ったら、ぜひ友達にもシェアしてください！
+          </p>
+          <div className="flex space-x-4">
+            {/* X（旧Twitter） */}
+            <a
+              href="https://twitter.com/intent/tweet?text=集中できる修行タイマーアプリ！%20https://myfitnesstimerapp.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+              aria-label="Xでシェア"
+            >
+              <FaXTwitter className="w-6 h-6" />
+            </a>
+            {/* LINE */}
+            <a
+              href="https://social-plugins.line.me/lineit/share?url=https://myfitnesstimerapp.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center w-12 h-12 rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors"
+              aria-label="LINEでシェア"
+            >
+              <FaLine className="w-6 h-6" />
+            </a>
+            {/* Facebook */}
+            <a
+              href="https://www.facebook.com/sharer/sharer.php?u=https://myfitnesstimerapp.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-700 text-white hover:bg-blue-800 transition-colors"
+              aria-label="Facebookでシェア"
+            >
+              <FaFacebook className="w-6 h-6" />
+            </a>
+            {/* Instagram（ハッシュタグ検索ページ例） */}
+            <a
+              href="https://www.instagram.com/explore/tags/修行タイマー/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-tr from-pink-500 via-red-500 to-yellow-500 text-white hover:opacity-80 transition-colors"
+              aria-label="Instagramでシェア"
+            >
+              <FaInstagram className="w-6 h-6" />
+            </a>
+          </div>
         </div>
       </div>
     </div>
