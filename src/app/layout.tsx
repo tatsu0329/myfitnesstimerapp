@@ -48,6 +48,23 @@ export default function RootLayout({
 
   return (
     <html lang="ja">
+      <head>
+        {/* Google Analytics */}
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-XKYCC58FW7"
+        ></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-XKYCC58FW7');
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${inter.className} bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 zen-fade-in`}
       >
